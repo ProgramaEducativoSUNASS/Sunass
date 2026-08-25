@@ -69,6 +69,8 @@ h1,h2,h3{font-family:"Archivo",system-ui,sans-serif;margin:0;line-height:1.15;te
 .rblock .rpob{margin-top:11px;padding-top:10px;border-top:1px dashed var(--hair-2);font-size:12px;color:var(--ink-2)}.rblock .rpob b{font-family:"Archivo";font-size:16px;color:var(--ink)}
 .rarrow{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:6px;background:var(--ok-wash);border:1px solid color-mix(in srgb,var(--ok) 26%,transparent);border-radius:var(--radius-sm);padding:12px 16px;min-width:150px}
 .rarrow .big{font-family:"Archivo";font-weight:800;font-size:22px;color:var(--ok)}.rarrow .lbl{font-size:11px;color:var(--ink-2);text-align:center}
+.rgood{background:var(--ok-wash);border-color:color-mix(in srgb,var(--ok) 30%,transparent)}
+.rgb{display:flex;gap:16px;margin-top:9px;font-size:12px;color:var(--ink-2)}.rgb b{color:var(--ink);font-family:"Archivo";font-weight:700}
 .linewrap{width:100%;overflow-x:auto}svg.line{display:block;width:100%;height:auto;min-width:380px}
 .line .grid-l{stroke:var(--hair);stroke-width:1}.line .axis{stroke:var(--hair-2);stroke-width:1}
 .line .ln{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round}
@@ -118,10 +120,10 @@ tbody td{padding:8px 12px;border-bottom:1px solid var(--hair);color:var(--ink)}t
   <div class="kpis" id="kpis"></div>
   <div class="grid">
     <div class="card span-12">
-      <div class="card-h"><div><h3>Del diagnóstico inicial a los avances del monitoreo</h3><div class="sub">reducción de II.EE. con cloro inadecuado — impacto en población estudiantil · 2026</div></div></div>
+      <div class="card-h"><div><h3>Diagnóstico inicial y monitoreo 2026</h3><div class="sub">reducción de II.EE. con cloro inadecuado — impacto en población estudiantil</div></div></div>
       <div class="redu" id="redu"></div>
     </div>
-    <div class="card span-12"><div class="card-h"><div><h3>N° II.EE. del Programa Colegio con Agua Segura · 2026</h3><div class="sub">colegios por macrorregión</div></div></div><div class="mapbox" id="macro"></div></div>
+    <div class="card span-12"><div class="card-h"><div><h3>N° II.EE. del Programa Colegio con Agua Segura · 2026</h3><div class="sub">colegios por macrorregión · cloro adecuado / inadecuado en diagnóstico y monitoreo</div></div></div><div id="macro"></div></div>
     <div class="card span-12"><div class="card-h"><div><h3>Evolución mensual de la cantidad de II.EE. con cloro adecuado</h3><div class="sub">% de colegios con cloro adecuado por mes · clic en un mes para filtrar la tabla</div></div></div><div class="linewrap"><div id="trend"></div></div></div>
     <div class="card span-12">
       <div class="card-h"><div><h3>Colegios del Programa Educativo Colegio con Agua Segura - 2026</h3><div class="sub" id="tbl-sub"></div></div></div>
@@ -170,31 +172,35 @@ function render(){
   const vis=sch.reduce((a,i)=>a+cs[i][4],0);
   kpi($('kpis'),[
     {l:'N° de II.EE. priorizadas 2026',v:num(sch.length),s:'Ámbito urbano'},
-    {l:'II.EE. con cloro adecuado',v:pctS(ad.length,wd.length),cls:'ok',s:`<b>${num(ad.length)}</b> de ${num(wd.length)} II.EE.`},
+    {l:'II.EE. con cloro adecuado',v:pctS(ad.length,wd.length),s:`<b>${num(ad.length)}</b> de ${num(wd.length)} II.EE.`},
     {l:'Promedio de cloro residual adecuado',v:promAd.toFixed(2).replace('.',','),s:'Nivel de cloro adecuado ≥ 0,5'},
     {l:'II.EE. con cloro inadecuado',v:pctS(ina.length,wd.length),cls:'bad',s:`<b>${num(ina.length)}</b> de ${num(wd.length)} II.EE.`},
-    {l:'Promedio de cloro residual inadecuado',v:promIn.toFixed(2).replace('.',','),s:'Nivel de cloro inadecuado < 0,5'},
-    {l:'Total de visitas',v:num(vis),s:''},
+    {l:'Promedio de cloro residual inadecuado',v:promIn.toFixed(2).replace('.',','),cls:'bad',s:'Nivel de cloro inadecuado < 0,5'},
+    {l:'Total de visitas',v:num(vis),cls:'ok',s:''},
   ]);
-  // reduction (dx vs mon inadequate + pob)
+  // Dx inadecuado / Mon inadecuado / Resultado (transiciones colegio a colegio)
   const dxi=sch.filter(i=>cs[i][1]!=null&&cs[i][1]<0.5),moni=sch.filter(i=>cs[i][2]!=null&&cs[i][2]<0.5);
   const dxp=dxi.reduce((a,i)=>a+cs[i][13],0),monp=moni.reduce((a,i)=>a+cs[i][13],0);
+  let imp=0,man=0,pobG=0;sch.forEach(i=>{const dx=cs[i][1],mo=cs[i][2];if(dx==null||mo==null)return;if(dx<0.5&&mo>=0.5){imp++;pobG+=cs[i][13];}else if(dx>=0.5&&mo>=0.5){man++;pobG+=cs[i][13];}});
   $('redu').innerHTML=`
-    <div class="rblock"><div class="rt"><span class="sw" style="background:${DX}"></span>Diagnóstico inicial <span style="color:var(--muted);font-weight:500">(${D.dxrng} 2026)</span></div><div class="rp">1ª medición · línea base</div>
+    <div class="rblock"><div class="rt"><span class="sw" style="background:${DX}"></span>Diagnóstico inicial <span style="color:var(--muted);font-weight:500">(${D.dxrng})</span></div><div class="rp">1ª medición · línea base</div>
       <div class="rv">${num(dxi.length)}</div><div class="rvl">II.EE. con cloro inadecuado</div>
       <div class="rpob">Población afectada: <b>${num(dxp)}</b> estudiantes</div></div>
-    <div class="rarrow"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--ok)" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg><div class="big">−${num(dxi.length-moni.length)}</div><div class="lbl">II.EE. con cloro inadecuado<br><b style="color:var(--ink)">${num(dxp-monp)}</b> estudiantes beneficiados</div></div>
-    <div class="rblock"><div class="rt"><span class="sw" style="background:${MON}"></span>Monitoreo <span style="color:var(--muted);font-weight:500">(${D.monrng} 2026)</span></div><div class="rp">seguimiento continuo</div>
+    <div class="rblock"><div class="rt"><span class="sw" style="background:${MON}"></span>Monitoreo <span style="color:var(--muted);font-weight:500">(${D.monrng})</span></div><div class="rp">seguimiento continuo</div>
       <div class="rv" style="color:var(--warn)">${num(moni.length)}</div><div class="rvl">II.EE. con cloro inadecuado</div>
-      <div class="rpob">Población afectada: <b>${num(monp)}</b> estudiantes</div></div>`;
+      <div class="rpob">Población afectada: <b>${num(monp)}</b> estudiantes</div></div>
+    <div class="rblock rgood"><div class="rt"><span class="sw" style="background:${OK}"></span>Resultado de la intervención</div><div class="rp">instituciones con cloro adecuado</div>
+      <div class="rv" style="color:var(--ok)">${num(imp+man)}</div><div class="rvl">II.EE. con cloro adecuado</div>
+      <div class="rgb"><span>Mejoraron: <b>${num(imp)}</b></span><span>Se mantuvieron: <b>${num(man)}</b></span></div>
+      <div class="rpob">Población beneficiada: <b>${num(pobG)}</b> estudiantes</div></div>`;
   // trend
   const pts=MES.map((m,mi)=>{const md=sch.filter(i=>cs[i][5+mi]!=null),mo=md.filter(i=>cs[i][5+mi]>=0.5).length;return md.length?{m,v:mo/md.length*100,ok:mo,tot:md.length,mi}:null;}).filter(Boolean);
   if(!pts.some(p=>p.mi===state.selM))state.selM=pts.length?pts[pts.length-1].mi:6;
   line('trend',pts,state.selM,mi=>{state.selM=mi;render();});
-  // macro (6 regions)
-  const rc=REGIONS.map(()=>0);sch.forEach(i=>{const r=cols[i][4];if(r>=0)rc[r]++;});
-  const mx=Math.max(1,...rc);
-  $('macro').innerHTML=REGIONS.map((r,i)=>rc[i]?`<div class="region"><div class="rl">${r}</div><div class="bar-track"><div class="bar-fill" style="width:${rc[i]/mx*100}%;background:${ACC}"></div></div><div class="rt">${num(rc[i])}</div></div>`:'').join('');
+  // macro breakdown: total + dx/mon adecuado/inadecuado
+  const M=REGIONS.map(()=>({tot:0,dxA:0,dxI:0,mA:0,mI:0}));
+  sch.forEach(i=>{const reg=cols[i][4];if(reg<0)return;const m=M[reg];m.tot++;if(cs[i][1]!=null)m[cs[i][1]>=0.5?'dxA':'dxI']++;if(cs[i][2]!=null)m[cs[i][2]>=0.5?'mA':'mI']++;});
+  $('macro').innerHTML=`<div class="tbl-wrap" style="max-height:none"><table><thead><tr><th>Macrorregión</th><th class="num">N° II.EE.</th><th class="num">Dx adecuado</th><th class="num">Dx inadecuado</th><th class="num">Mon. adecuado</th><th class="num">Mon. inadecuado</th></tr></thead><tbody>${REGIONS.map((r,i)=>M[i].tot?`<tr><td><b>${r}</b></td><td class="num">${num(M[i].tot)}</td><td class="num" style="color:var(--ok);font-weight:600">${num(M[i].dxA)}</td><td class="num" style="color:var(--bad);font-weight:600">${num(M[i].dxI)}</td><td class="num" style="color:var(--ok);font-weight:600">${num(M[i].mA)}</td><td class="num" style="color:var(--bad);font-weight:600">${num(M[i].mI)}</td></tr>`:'').join('')}</tbody></table></div>`;
   renderTable(sch);
   $('foot-r').textContent=num(cols.length)+' II.EE. · '+num(TOTVIS)+' visitas · 2026';
 }

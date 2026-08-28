@@ -116,7 +116,7 @@ thead th.num,tbody td.num{text-align:right;font-variant-numeric:tabular-nums}
 thead th.ctr,tbody td.ctr{text-align:center;font-variant-numeric:tabular-nums}
 tbody td{padding:8px 12px;border-bottom:1px solid var(--hair);color:var(--ink)}tbody tr:hover td{background:var(--surface-2)}tbody tr:last-child td{border-bottom:0}
 .badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;white-space:nowrap}
-.badge.ok{background:var(--ok-wash);color:var(--ok)}.badge.bad{background:var(--bad-wash);color:var(--bad)}.badge.nd{background:var(--surface-3);color:var(--muted)}.badge.warn{background:var(--warn-wash);color:var(--warn)}
+.badge.ok{background:var(--accent-wash);color:var(--accent-2)}.badge.bad{background:var(--bad-wash);color:var(--bad)}.badge.nd{background:var(--surface-3);color:var(--muted)}.badge.warn{background:var(--surface-3);color:var(--muted)}
 .empty{padding:24px;text-align:center;color:var(--muted);font-size:13px}
 .spark{display:inline-flex;gap:2px;align-items:end;vertical-align:middle}
 .spark .b{width:6px;background:var(--surface-3);border-radius:1px;position:relative}
@@ -154,7 +154,7 @@ tbody td{padding:8px 12px;border-bottom:1px solid var(--hair);color:var(--ink)}t
     <div class="card span-6">
       <div class="card-h"><div><h3>Ubicación de los colegios del Programa · 2026</h3><div class="sub">Verde: cloro adecuado · Rojo: inadecuado · Puntos por ubicación del colegio</div></div></div>
       <div class="mapwrap"><div id="map"></div><div class="map-legend"><span><span class="lg-dot ok"></span>Adecuado</span><span><span class="lg-dot bad"></span>Inadecuado</span></div></div>
-      <div class="mapmeta"><div class="mm-r"><span>Mostrados: <b id="map-shown">–</b></span><span>Adecuado: <b id="map-ok">–</b></span><span>Inadecuado: <b id="map-bad">–</b></span><span>Sin coord.: <b id="map-noc">–</b></span></div></div>
+      <div class="mapmeta"><div class="mm-r"><span>Mostrados: <b id="map-shown">–</b></span><span>Adecuado: <b id="map-ok">–</b></span><span>Inadecuado: <b id="map-bad">–</b></span></div></div>
     </div>
     <div class="card span-12">
       <div class="card-h"><div><h3>Colegios del Programa Educativo Colegio con Agua Segura · 2026</h3><div class="sub" id="tbl-sub">Estado (actual) = última medición · Estado (DI) = primera medición</div></div></div>
@@ -468,7 +468,6 @@ function renderMap(sch){
   $('map-shown').textContent=num(withCoord.length);
   $('map-ok').textContent=num(nOk);
   $('map-bad').textContent=num(nBad);
-  $('map-noc').textContent=num(noCoord);
   if(bounds.length){
     if(bounds.length===1){_map.setView(bounds[0],13);}
     else{_map.fitBounds(bounds,{padding:[24,24],maxZoom:state.dep||state.prov||state.dist?13:8});}

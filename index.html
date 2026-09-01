@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" data-theme="light">
 <head>
 <meta charset="utf-8">
 <title>Programa Educativo Colegio con Agua Segura</title>
@@ -56,7 +56,7 @@ h1,h2,h3{font-family:"Archivo",system-ui,sans-serif;margin:0;line-height:1.15;te
 .card h3{font-size:14px;font-weight:700;letter-spacing:-.01em}.card .sub{font-size:11.5px;color:var(--muted);margin-top:2px}
 .card-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:14px}
 .span-6{grid-column:span 6}.span-12{grid-column:span 12}
-.kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:14px}
+.kpis{display:grid;grid-template-columns:repeat(7,1fr);gap:12px;margin-bottom:14px}
 .kpi{background:var(--surface);border:1px solid var(--hair);border-radius:var(--radius);padding:14px 15px;box-shadow:var(--shadow);position:relative;overflow:hidden}
 .kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent)}.kpi.ok::before{background:var(--ok)}.kpi.bad::before{background:var(--bad)}
 .kpi .k-l{font-size:11px;color:var(--ink-2);min-height:30px;font-weight:600}.kpi .k-v{font-family:"Archivo";font-weight:800;font-size:25px;letter-spacing:-.02em;margin-top:6px;line-height:1}
@@ -305,12 +305,13 @@ function render(){
   const vis=sch.reduce((a,i)=>a+(nVis(i)||0),0);
   const estadoLbl=state.mesSel==null?'estado de la última medición':(state.mesSel==='DI'?'diagnóstico inicial':'estado a fin de '+MES[state.mesSel]);
   kpi($('kpis'),[
-    {l:'II.EE. priorizadas 2026',v:num(sch.length),s:'Población total: <b>'+num(pobF)+'</b>'},
+    {l:'N° II.EE. priorizadas 2026',v:num(sch.length),s:'Población total: <b>'+num(pobF)+'</b>'},
     {l:'II.EE. con cloro adecuado',v:pctS(ade.length,wd.length),s:`<b>${num(ade.length)}</b> de ${num(wd.length)} II.EE.`},
     {l:'Promedio de cloro residual adecuado',v:promAd.toFixed(2).replace('.',','),s:'Nivel de cloro adecuado ≥ 0,5'},
     {l:'II.EE. con cloro inadecuado',v:pctS(ina.length,wd.length),cls:'bad',s:`<b>${num(ina.length)}</b> de ${num(wd.length)} II.EE. · ${estadoLbl}`},
     {l:'Promedio de cloro residual inadecuado',v:promIn.toFixed(2).replace('.',','),cls:'bad',s:'Nivel de cloro inadecuado < 0,5'},
     {l:'Total de visitas',v:num(vis),s:'Total de visitas de acompañamiento durante la intervención'},
+    {l:'Población beneficiada',v:num(pobF),s:'Estudiantes beneficiados'},
   ]);
 
   // -------- Diagnóstico inicial vs Monitoreo (transición DI → actual) --------

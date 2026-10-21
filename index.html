@@ -831,6 +831,27 @@ td .prog{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.01e
 td .badge.warn{background:rgba(214,150,0,.12);color:#9a6a00;border-color:rgba(214,150,0,.3)}
 th.grp{background:var(--surface-2);font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-2);border-bottom:1px solid var(--hair-2)}
 
+/* ===== Notificaciones de bajo cloro (parche 21-oct) ===== */
+td .cv.bad.notif{background:#e3f0fa;color:var(--accent);border-radius:4px;padding:2px 7px;cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}
+td .cv.bad.notif:hover{filter:brightness(.92)}
+td .cv.bad.notif::before{content:'\260E\00A0';font-size:11px;font-variant-emoji:text}
+td .cv.bad.pend{cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}
+td .cv.bad.pend::before{content:'\26A0\FE0E\00A0';font-size:11px;color:var(--bad);font-variant-emoji:text}
+#notifBadge{position:fixed;bottom:14px;right:14px;z-index:99999;background:#fff;border:1px solid #e3e8ee;border-radius:8px;padding:8px 14px;font:600 12px "IBM Plex Sans",system-ui;box-shadow:0 4px 12px rgba(0,0,0,.1);display:none}#notifBadge.show{display:block}#notifBadge.ok{border-color:#1569c7;color:#1569c7;background:#e3f0fa}#notifBadge.err{border-color:#d03b3b;color:#d03b3b;background:#fde7e7}
+td .cv.bad.pend:hover{filter:brightness(.85)}
+#notifPopup{position:fixed;inset:0;background:rgba(15,30,50,.5);display:none;z-index:9999;align-items:center;justify-content:center;padding:20px}
+#notifPopup.show{display:flex}
+#notifPopup .pbox{background:#fff;border-radius:14px;max-width:620px;width:100%;max-height:85vh;overflow:auto;padding:28px;box-shadow:0 20px 60px rgba(0,0,0,.3);position:relative}
+#notifPopup .ph{font-size:18px;font-weight:700;color:#0f1e32;margin:0 0 4px;padding-right:30px}
+#notifPopup .psub{font-size:13px;color:#5a6b7c;margin-bottom:18px}
+#notifPopup .pstatus{display:inline-block;padding:4px 12px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;margin-bottom:16px}
+#notifPopup .pstatus.notif{background:#e3f0fa;color:#1569c7}
+#notifPopup .pstatus.pend{background:#fde7e7;color:#d03b3b}
+#notifPopup .prow{display:flex;gap:14px;padding:10px 0;border-top:1px solid #e3e8ee}
+#notifPopup .prow .pl{min-width:140px;font-size:11px;color:#5a6b7c;font-weight:700;text-transform:uppercase;letter-spacing:.02em;flex-shrink:0}
+#notifPopup .prow .pv{flex:1;color:#0f1e32;font-size:14px;line-height:1.5}
+#notifPopup .pclose{position:absolute;top:16px;right:18px;background:none;border:none;font-size:26px;cursor:pointer;color:#5a6b7c;line-height:1;padding:4px 10px;border-radius:6px}
+#notifPopup .pclose:hover{background:#f3f6f9;color:#0f1e32}
 </style>
 </head>
 <body>
@@ -1213,5 +1234,106 @@ $('themeBtn').addEventListener('click',()=>{const r=document.documentElement,c=r
 render();
 </script>
 
+<div id="notifPopup"><div class="pbox"><button class="pclose" onclick="document.getElementById('notifPopup').classList.remove('show')">&times;</button><div id="popupContent"></div></div></div>
+<script>
+(function(){
+  const NOTIF_CSV_REGISTROS='https://docs.google.com/spreadsheets/d/e/2PACX-1vQggAtVlscaQYxvNXM9sDtd0sGD4ZqEigiY1BNnUN7rNCFcU_F3yZIQOTaptDpU6Gh3b5m35TY04HSN/pub?gid=258309679&single=true&output=csv';
+  const NOTIF_CSV_BAJACLOR='https://docs.google.com/spreadsheets/d/e/2PACX-1vQggAtVlscaQYxvNXM9sDtd0sGD4ZqEigiY1BNnUN7rNCFcU_F3yZIQOTaptDpU6Gh3b5m35TY04HSN/pub?gid=1450315518&single=true&output=csv';
+  const MES_NUM={'Ene':1,'Feb':2,'Mar':3,'Abr':4,'May':5,'Jun':6,'Jul':7,'Ago':8,'Set':9,'Sep':9,'Oct':10,'Nov':11,'Dic':12,'Dec':12};
+  let NOTIF_MAP=null;
+
+  function parseCSV(text){const rows=[];let i=0,row=[],fld='',q=false;while(i<text.length){const c=text[i];if(q){if(c==='"'){if(text[i+1]==='"'){fld+='"';i+=2;continue;}q=false;i++;continue;}fld+=c;i++;}else{if(c==='"'){q=true;i++;continue;}if(c===','){row.push(fld);fld='';i++;continue;}if(c==='\n'){row.push(fld);rows.push(row);row=[];fld='';i++;continue;}if(c==='\r'){i++;continue;}fld+=c;i++;}}if(fld||row.length){row.push(fld);rows.push(row);}if(!rows.length)return[];const h=rows[0].map(x=>x.trim());return rows.slice(1).filter(r=>r.some(x=>x&&x.trim())).map(r=>{const o={};h.forEach((k,i)=>o[k]=(r[i]||'').trim());return o;});}
+  function parseDate(s){if(!s)return null;s=String(s).trim();let m=/^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(s);if(m)return new Date(+m[1],+m[2]-1,+m[3]);m=/^(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(s);if(m){const a=+m[1],b=+m[2],y=+m[3];if(a>12)return new Date(y,b-1,a);if(b>12)return new Date(y,a-1,b);return new Date(y,a-1,b);}const d=new Date(s);return isNaN(d.getTime())?null:d;}
+  function extractCod(s){if(!s)return null;const m=/^\s*(\d{3,6})\s*-/.exec(s);return m?m[1].padStart(6,'0'):null;}
+  function normCod(c){if(c==null)return null;const s=String(c).trim();if(/^\d+$/.test(s))return s.padStart(6,'0');return s;}
+  async function fetchCSV(u){const r=await fetch(u,{cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);return parseCSV(await r.text());}
+  async function loadNotif(){try{const [reg,bc]=await Promise.all([fetchCSV(NOTIF_CSV_REGISTROS),fetchCSV(NOTIF_CSV_BAJACLOR)]);const map=new Map();for(const r of reg){const cod=extractCod(r['Colegio']);if(!cod)continue;const fe=parseDate(r['Fecha Envío']||r['Timestamp']);if(!fe)continue;const n={cod,fuente:'Registros',oficina:r['Oficina']||'',colegio:r['Colegio']||'',actor:r['Actor Clave']||'—',causa:r['Causa']||'',fe,feStr:(r['Fecha Envío']||'').trim()||(r['Timestamp']||'').split(' ')[0],fr:r['Fecha Respuesta']||'',notas:r['Notas']||''};if(!map.has(cod))map.set(cod,[]);map.get(cod).push(n);}for(const r of bc){const cod=normCod(r['CODLOCAL']);if(!cod)continue;const seg=(r['SEGUIMIENTO']||'').trim();if(!seg)continue;const fe=parseDate(r['Fecha']);if(!fe)continue;const n={cod,fuente:'BAJA CLORACIÓN',oficina:r['ODS']||'',colegio:r['Colegio']||'',actor:(r['Tipo de notificación']||'—').trim(),causa:'',fe,feStr:r['Fecha']||'',fr:'',notas:seg};if(!map.has(cod))map.set(cod,[]);map.get(cod).push(n);}for(const l of map.values())l.sort((a,b)=>b.fe-a.fe);console.log('[notif] cargadas:',map.size,'colegios');var b=document.getElementById('notifBadge');if(!b){b=document.createElement('div');b.id='notifBadge';document.body.appendChild(b);}b.className='show ok';b.textContent='Notificaciones: '+map.size+' colegios cargados';return map;}catch(e){console.warn('[notif] fetch fallo:',e);var b=document.getElementById('notifBadge');if(!b){b=document.createElement('div');b.id='notifBadge';document.body.appendChild(b);}b.className='show err';b.textContent='Notificaciones: ERROR al cargar - '+e.message;return new Map();}}
+  function notifCubreMes(n,mesNom){const mc=MES_NUM[mesNom];if(!mc)return false;return n.fe.getFullYear()===2026&&(n.fe.getMonth()+1)>=mc;}
+
+  function enrichDOM(){
+    if(!NOTIF_MAP||NOTIF_MAP.size===0)return;
+    const tbody=document.getElementById('tbody');const thead=document.getElementById('thead');
+    if(!tbody||!thead)return;
+    // Leer la ultima fila del thead (donde estan los meses si hay gorrito)
+    const trs=thead.querySelectorAll('tr');const lastTr=trs[trs.length-1];
+    if(!lastTr)return;
+    const headerCells=lastTr.querySelectorAll('th');
+    // Si la ultima fila es la de meses (gorrito), su offset es 0 pero las columnas pre y post vienen en la fila anterior con rowspan=2
+    // Mejor: tomar la primera fila del thead y mapear por colspan
+    const firstTr=trs[0];const firstCells=firstTr.querySelectorAll('th');
+    let colMap=[];let idx=0;
+    firstCells.forEach(th=>{
+      const colspan=parseInt(th.getAttribute('colspan')||'1');
+      const rowspan=parseInt(th.getAttribute('rowspan')||'1');
+      const txt=(th.textContent||'').trim();
+      if(colspan>1){
+        // Es el gorrito. Las columnas de abajo
+        const subTh=lastTr.querySelectorAll('th');
+        for(let k=0;k<colspan;k++){
+          const sub=subTh[k];const subTxt=(sub?.textContent||'').trim();
+          colMap[idx++]={txt:subTxt,isMes:!!MES_NUM[subTxt]};
+        }
+      } else {
+        colMap[idx++]={txt,isMes:false,isUltima:txt.toLowerCase().startsWith('última medición')};
+      }
+    });
+    // Si no hay gorrito (una sola fila), mapear directo
+    if(trs.length===1){
+      colMap=[];firstCells.forEach(th=>{const txt=(th.textContent||'').trim();colMap.push({txt,isMes:!!MES_NUM[txt],isUltima:txt.toLowerCase().startsWith('última medición')});});
+    }
+    // Identificar indices de columnas de mes y de ultima medicion
+    const colMes={};let colUltima=-1;
+    colMap.forEach((c,i)=>{if(c.isMes)colMes[i]=c.txt;if(c.isUltima)colUltima=i;});
+
+    tbody.querySelectorAll('tr').forEach(tr=>{
+      const tds=tr.querySelectorAll('td');if(tds.length<3)return;
+      // Extraer CODLOCAL del small
+      let cod=null;
+      tds.forEach(td=>{const sm=td.querySelector('small');if(sm){const m=/(\d{3,6})/.exec(sm.textContent);if(m)cod=m[1].padStart(6,'0');}});
+      if(!cod)return;
+      const notifs=NOTIF_MAP.get(cod)||[];
+      const latest=notifs[0]||null;
+      // Celdas de mes
+      Object.entries(colMes).forEach(([i,mesN])=>{
+        const td=tds[+i];if(!td)return;const cv=td.querySelector('.cv.bad');if(!cv)return;
+        const cover=notifs.find(n=>notifCubreMes(n,mesN));
+        cv.classList.remove('notif','pend');
+        if(cover){cv.classList.add('notif');cv.dataset.notifCod=cod;}
+        else {cv.classList.add('pend');cv.dataset.notifCod=cod;}
+      });
+      // Última medición
+      if(colUltima>=0){
+        const td=tds[colUltima];if(td){const cv=td.querySelector('.cv.bad');if(cv){cv.classList.remove('notif','pend');if(latest){cv.classList.add('notif');cv.dataset.notifCod=cod;}else{cv.classList.add('pend');cv.dataset.notifCod=cod;}}}
+      }
+    });
+  }
+
+  function showPopup(cod){
+    const notifs=NOTIF_MAP?NOTIF_MAP.get(cod)||[]:[];
+    const latest=notifs[0]||null;
+    const pop=document.getElementById('notifPopup'),cc=document.getElementById('popupContent');
+    if(!pop||!cc)return;
+    let html;
+    if(!latest){
+      html=`<span class="pstatus pend">Pendiente de notificar</span><h2 class="ph">Colegio con bajo cloro sin notificacion</h2><div class="psub">CODLOCAL ${cod} - Aun no hay registro de notificacion de seguimiento para este colegio.</div><div class="prow"><div class="pl">Que hacer</div><div class="pv">Registra la notificacion en el formulario "Seguimiento de baja cloracion" para que aparezca aca como notificado.</div></div>`;
+    } else {
+      html=`<span class="pstatus notif">Notificado</span><h2 class="ph">${latest.colegio||cod}</h2><div class="psub">${latest.oficina||'—'} · fuente: ${latest.fuente}</div><div class="prow"><div class="pl">Actor clave</div><div class="pv">${latest.actor||'—'}</div></div>${latest.causa?`<div class="prow"><div class="pl">Causa</div><div class="pv">${latest.causa}</div></div>`:''}<div class="prow"><div class="pl">Fecha envio</div><div class="pv">${latest.feStr||'—'}</div></div>${latest.fr?`<div class="prow"><div class="pl">Fecha respuesta</div><div class="pv">${latest.fr}</div></div>`:''}<div class="prow"><div class="pl">Notas de seguimiento</div><div class="pv">${(latest.notas||'—').replace(/\n/g,'<br>')}</div></div>${notifs.length>1?`<div class="prow"><div class="pl">Historial</div><div class="pv">Este colegio tiene ${notifs.length} notificaciones en 2026. Se muestra la mas reciente, que cubre todos los bajos cloros anteriores dentro del año.</div></div>`:''}`;
+    }
+    cc.innerHTML=html;pop.classList.add('show');
+  }
+
+  document.addEventListener('click',e=>{const cv=e.target.closest('.cv.bad.notif, .cv.bad.pend');if(cv&&cv.dataset.notifCod){showPopup(cv.dataset.notifCod);return;}if(e.target.id==='notifPopup')document.getElementById('notifPopup').classList.remove('show');});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')document.getElementById('notifPopup').classList.remove('show');});
+
+  function init(){
+    const tbody=document.getElementById('tbody');
+    if(!tbody){setTimeout(init,300);return;}
+    new MutationObserver(()=>{if(NOTIF_MAP)enrichDOM();}).observe(tbody,{childList:true});
+    if(NOTIF_MAP)enrichDOM();
+  }
+
+  loadNotif().then(m=>{NOTIF_MAP=m;init();});
+})();
+</script>
 </body>
 </html>

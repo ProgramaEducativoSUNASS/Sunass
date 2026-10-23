@@ -1081,7 +1081,7 @@ function renderFED(sch){
 }
 
 function cvCell(v){if(v==null)return '<span style="color:var(--muted)">—</span>';return `<span class="cv ${v<0.5?'bad':'ok'}">${fmt2(v)}</span>`;}
-function razonCell(i){const r=cRazon(i);if(!r)return '<span style="color:var(--muted)">—</span>';const d=cDetalle(i);const t=d?` title="${String(d).replace(/"/g,'&quot;')}"`:'';return `<span class="razon"${t}>${r}</span>`;}
+function razonCell(i){const r=cRazon(i);const d=cDetalle(i);if(!r)return '<span style="color:var(--muted)">—</span>';const t=d?` title="${String(d).replace(/"/g,'&quot;')}"`:'';const esOtro=r&&r.trim().toLowerCase()==='otro';if(esOtro&&d){const dc=d.length>90?d.slice(0,90).trim()+'…':d;return `<span class="razon"${t}>${dc}</span>`;}if(d){const dc=d.length>60?d.slice(0,60).trim()+'…':d;return `<span class="razon"${t}>${r} <span style="color:var(--ink-2);font-weight:400;font-size:12px">(${dc})</span></span>`;}return `<span class="razon"${t}>${r}</span>`;}
 function estBadge(v){if(v==null)return `<span class="badge nd">—</span>`;return v>=0.5?`<span class="badge ok">Adecuado</span>`:`<span class="badge bad">Inadecuado</span>`;}
 
 function limpTxt(y){return y>=2021?(''+y):(y===0?'Año anterior':'Sin registro');}
